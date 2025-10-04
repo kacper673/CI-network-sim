@@ -37,6 +37,9 @@ class World:
     def tick(self):
         self.current_tick += 1
 
+        for building in self.buildings.values():
+            building.update_status()
+
         for building in sorted([b for b in self.buildings.values() if not b.produces and b.status == "active"], key=lambda b: b.priority):
             success = building.tick()
             print(f"{building.id} operational: {success}")

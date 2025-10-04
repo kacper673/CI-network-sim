@@ -2,6 +2,8 @@ from pdb import run
 from csv_world_import import World
 from buildings import Hospital, PowerPlant, Magazine, DataCenter, WaterPlant
 from infrastructure import RoadNetwork, EnergyGrid, WaterNetwork, TelecomNetwork, RailwayNetwork
+import pandas as pd
+import json
 
 def create_simple_world():
     world = World()
@@ -82,6 +84,37 @@ def create_simple_world():
 
     return world
 
+def save_simulation_to_csv(world, nodes_file="nodes.csv", edges_file="edges.csv"):        
+    buildings_data = [{
+        "id": building.id,
+        "type": building.__class__.__name__,
+        "status": building.status,
+        "priority": building.priority,
+        "requires": json.dumps(building.requires),
+        "produces": json.dumps(building.produces),
+        "resources": json.dumps(building.resources),
+    } for building in world.buildings.values()]
+    
+    df_buildings = pd.DataFrame(buildings_data)
+    df_buildings.to_csv(nodes_file, index=False)
+    
+    # Create DataFrame for connections (edges)
+    edges_data = [{
+        "from": edge.from_node.id,
+        "to": edge.to_node.id,
+        "layer": edge.attributes.get("layer", ""),
+        "capacity": edge.attributes.get("capacity", ""),
+        "travel_time": edge.attributes.get("travel_time", ""),
+        "status": edge.attributes.get("status", ""),
+        "attributes_json": json.dumps(edge.attributes),
+    } for edge in world.edges]
+    
+    df_edges = pd.DataFrame(edges_data)
+    df_edges.to_csv(edges_file, index=False)
+    
+    print(f"Saved simulation to {nodes_file} and {edges_file}")
+    return df_buildings, df_edges    
+
 def run_sim():
     world = create_simple_world()
     
@@ -95,6 +128,8 @@ def run_sim():
     print("\n=== FINAL STATE ===")
     for building_id, building in world.buildings.items():
         print(f"{building_id}: Status={building.status}, Resources={building.resources}")
+
+    save_simulation_to_csv(world, "final_nodes.csv", "final_edges.csv")        
 
 if __name__ == "__main__":
     run_sim()
