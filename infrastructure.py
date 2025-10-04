@@ -26,7 +26,7 @@ class Infrastructure(Layer):
         attributes = self.default_attributes.copy()
         if custom_attributes:
             attributes.update(custom_attributes)
-            
+        attributes.setdefault("layer",self.name)
         return self.connect_nodes(from_building, to_building, attributes)
 
 # Define the infrastructure layer types
