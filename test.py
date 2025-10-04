@@ -24,8 +24,8 @@ class Building:
         self.input_supply = {}
 
 class Hospital(Building):
-    def __init__(self, basic_resources, consumption_per_tick):
-        super().__init__()
+    def __init__(self, id, basic_resources, consumption_per_tick):
+        super().__init__(id=id)
         self.basic_resources = basic_resources
         self.consumption_per_tick = consumption_per_tick        
 
@@ -41,8 +41,8 @@ class Hospital(Building):
         self.basic_resources += amount            
 
 class Magazine(Building):
-    def __init__(self, basic_resources, supply_per_tick):
-        super().__init__()
+    def __init__(self, id, basic_resources, supply_per_tick):
+        super().__init__(id=id)
         self.basic_resources = basic_resources
         self.supply_per_tick = supply_per_tick
 
@@ -54,9 +54,64 @@ class Magazine(Building):
             return 0
             
 class Road(Layer):
-    def __init__(self, state, capacity, status):
-        super().__init__()
-        self.resource_type = ["personnel", "basic_resources"]
+    def __init__(self, name, resource_type, state, capacity, status, travel_time):
+        super().__init__(name=name, resource_type=resource_type)
+        # self.resource_type = ["personnel", "basic_resources"]
         self.state = state
         self.capacity = capacity
         self.status = status            
+        self.travel_time = travel_time
+        self.supplies_in_transit = []
+
+    def send_supplies(self, amount):        
+        self.supplies_in_transit.append({
+            'amount': amount,
+            'ticks_remaining': self.travel_time
+        })
+    
+    def tick(self):        
+        arrived_supplies = 0
+        for supply in self.supplies_in_transit[:]:
+            supply['ticks_remaining'] -= 1
+            if supply['ticks_remaining'] <= 0:
+                arrived_supplies += supply['amount']
+                self.supplies_in_transit.remove(supply)
+        return arrived_supplies        
+
+def simulate():
+    print("Symulator")
+
+    hospital = Hospital(id = "HOSP_001", basic_resources=100, consumption_per_tick=10)
+    # hospital.id = "HOSP_001"
+
+    magazine = Magazine(id = "MAG_001", basic_resources=500, supply_per_tick=10)
+    # magazine.id = "MAG_001"
+
+    road = Road(name = "ROAD_001", resource_type = ["personnel", "basic_resources"], state="good", capacity=50, status="active", travel_time=3)
+    # road.name = "ROAD_001"
+
+    for tick in range(1, 11):
+        print(f"Tick: {tick}")
+
+        hospital_success = hospital.tick()
+        print(f"Hospital {hospital.id} consumed {hospital.consumption_per_tick} resources")
+        print(f"Hospital {hospital.id} resources: {hospital.basic_resources}")
+        
+        # Magazine supplies resources
+        supply_amount = magazine.tick()
+        print(f"Magazine {magazine.id} supplied {supply_amount} resources")
+        print(f"Magazine {magazine.id} resources: {magazine.basic_resources}")
+        
+        # Road processes transit
+        if supply_amount > 0:
+            road.send_supplies(supply_amount)
+        
+        arrived_supplies = road.tick()
+        if arrived_supplies > 0:
+            hospital.receive_supplies(arrived_supplies)
+            print(f"Supplies arrived at hospital {hospital.id}: {arrived_supplies}")
+        
+        print(f"Supplies in transit: {len(road.supplies_in_transit)}")
+
+if __name__ == "__main__":
+    simulate()
