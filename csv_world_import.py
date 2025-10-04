@@ -1,9 +1,6 @@
 import csv
 import json
-from unittest import case
-
-import pandas as pd
-import buildings, models, infrastructure
+import buildings, infrastructure
 
 
 class World:
