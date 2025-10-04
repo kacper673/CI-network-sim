@@ -122,8 +122,8 @@ class DataCenter(Building):
 class WaterPlant(Building):
     def __init__(self, id, resource=None, consumption=None, production=None, priority=1):
         resources = resources or {}
-        consumption = consumption or {}
-        production = production or {}
+        consumption = consumption or {"electricity": 8}
+        production = production or {"water": 25}
 
         super().__init__(
             id=id,
