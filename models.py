@@ -34,8 +34,8 @@ class Edge:
     
     def send_resource(self, resource_type, amount):
         """Send resources through this edge"""
-        if resource_type not in self.from_node.produces:
-            return False
+        if self.from_node.resources.get(resource_type, 0) < amount:
+            return False       
             
         travel_time = self.attributes.get("travel_time", 1)
         self.resources_in_transit[resource_type].append({
