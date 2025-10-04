@@ -81,14 +81,11 @@ class Road(Layer):
 def simulate():
     print("Symulator")
 
-    hospital = Hospital(id = "HOSP_001", basic_resources=100, consumption_per_tick=10)
-    # hospital.id = "HOSP_001"
+    hospital = Hospital(id = "HOSP_001", basic_resources=100, consumption_per_tick=10)    
 
-    magazine = Magazine(id = "MAG_001", basic_resources=500, supply_per_tick=10)
-    # magazine.id = "MAG_001"
+    magazine = Magazine(id = "MAG_001", basic_resources=500, supply_per_tick=10)    
 
-    road = Road(name = "ROAD_001", resource_type = ["personnel", "basic_resources"], state="good", capacity=50, status="active", travel_time=3)
-    # road.name = "ROAD_001"
+    road = Road(name = "ROAD_001", resource_type = ["personnel", "basic_resources"], state="good", capacity=50, status="active", travel_time=3)    
 
     for tick in range(1, 11):
         print(f"Tick: {tick}")
