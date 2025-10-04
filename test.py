@@ -9,7 +9,7 @@ class Edge:
     def __init__(self, from_node, to_node, attributes):
         self.from_node = from_node
         self.to_node = to_node
-        self.attributes = attributes
+        self.attributes = attributes # ex. dict: {"capacity": 100, "status": "active"}
 
 class Bulding:
     def __init__(self, id, requires=None, produces=None, priority=1):
