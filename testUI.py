@@ -197,6 +197,8 @@ def create_world_from_csv(csv_path_buildings, csv_path_edges):
                 case "PowerPlant": new_building = buildings.PowerPlant(row["id"])
                 case "Magazine": new_building = buildings.Magazine(row["id"])
                 case "Hospital": new_building = buildings.Hospital(row["id"])
+                case "WaterPlant": new_building = buildings.WaterPlant(row["id"])
+                case "DataCenter": new_building = buildings.DataCenter(row["id"])
 
             new_building.resources = json.loads(row["resources"])
             new_building.requires = json.loads(row["requires"])
