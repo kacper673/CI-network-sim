@@ -9,6 +9,20 @@ class Building:
         self.produces = produces or {}
         self.status = "active"  # active, offline, destroyed
         self.resources = {resource: 0 for resource in RESOURCE_TYPES}
+
+    def works(self) -> bool:
+       for resource, amount in self.requires.items():
+            if self.resources.get(resource, 0) < amount:
+                return False
+            return True
+
+    def update_status(self):
+
+        if self.works():
+            self.status = "active"
+            return
+        
+        self.status = "offline"
         
     def tick(self):
         """Base tick method to be implemented by subclasses"""
