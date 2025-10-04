@@ -11,14 +11,15 @@ class World:
         self.road_network = infrastructure.RoadNetwork()
         self.energy_grid = infrastructure.EnergyGrid()
         self.water_network = infrastructure.WaterNetwork()
-        self.railway_network = infrastructure.RailwayNetwork()
-        self.road_network = infrastructure.RoadNetwork()
+        self.railway_network = infrastructure.RailwayNetwork()        
+        self.telecom_network = infrastructure.TelecomNetwork()
+        
         self.infrastructure_networks = {
             self.road_network.name: self.road_network,
             self.energy_grid.name: self.energy_grid,
-            self.water_network: self.water_network,
-            self.railway_network: self.railway_network,
-            self.road_network: self.road_network,             
+            self.water_network.name: self.water_network,
+            self.railway_network.name: self.railway_network,
+            self.telecom_network.name: self.telecom_network,
             }
         self.buildings = {}
         self.edges = []
@@ -36,6 +37,10 @@ class World:
     def tick(self):
         self.current_tick += 1
 
+        for building in sorted([b for b in self.buildings.values() if not b.produces and b.status == "active"], key=lambda b: b.priority):
+            success = building.tick()
+            print(f"{building.id} operational: {success}")
+
         for building in sorted([b for b in self.buildings.values() if b.produces and b.status == "active"], key=lambda b: b.priority):
             if building.tick():
                 print(f"{building.id} produced resources")
@@ -44,11 +49,7 @@ class World:
         for edge in self.edges:
             if edge.attributes.get("status", "active") != "destroyed":
                 edge.tick()
-
-        for building in sorted([b for b in self.buildings.values() if not b.produces and b.status == "active"], key=lambda b: b.priority):
-            success = building.tick()
-            print(f"{building.id} operational: {success}")
-
+        
         return self.current_tick    
 
     def distribute_resources(self, building):
@@ -58,11 +59,11 @@ class World:
             return
 
         for resource, amount in building.produces.items():
-            avalible = building.resources.get(resource, 0)
-            if avalible <= 0:
+            availible = building.resources.get(resource, 0)
+            if availible <= 0:
                 continue
 
-            amount_per_edge = min(avalible, amount) / len(outgoing_edges)
+            amount_per_edge = min(availible, amount) / len(outgoing_edges)
             
             for edge in outgoing_edges:
                 if amount_per_edge <= 0: #min(avalible, amount)
@@ -74,6 +75,7 @@ class World:
                     send_amount = amount_per_edge
 
                 building.resources[resource] -= send_amount
+                
                 edge.send_resource(resource, send_amount)
                 print(f"Sent {send_amount} {resource} from {building.id} to {edge.to_node.id}")
 
@@ -141,4 +143,4 @@ def create_world_from_csv(csv_path_buildings, csv_path_edges):
     return world
 
 
-w1 = create_world_from_csv("nodes.csv", "edges.csv")
+# w1 = create_world_from_csv("nodes.csv", "edges.csv")

@@ -11,10 +11,10 @@ class Building:
         self.resources = {resource: 0 for resource in RESOURCE_TYPES}
 
     def works(self) -> bool:
-       for resource, amount in self.requires.items():
+        for resource, amount in self.requires.items():
             if self.resources.get(resource, 0) < amount:
                 return False
-            return True
+        return True
 
     def update_status(self):
 
