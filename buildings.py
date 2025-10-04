@@ -157,3 +157,51 @@ class WaterPlant(Building):
                 self.resources[resource] += amount
             return True
         return False        
+
+class Factory(Building):
+    def __init__(self, id, resources=None, consumption=None, production=None, priority=3):
+        resources = resources or {}
+        consumption = consumption or {"electicity": 12, "water": 7, "basic_resources": 15}
+        production = production or {"heavy_resources": 8}
+
+        super().__init__(
+            id=id,
+            requires=consumption,
+            produces=production,
+            priority=priority
+        )
+
+        for resource_type, amount in resources.items():
+            self.resources[resource_type] = amount
+
+    def tick(self):
+        if super().tick():
+            # produce heavy resources
+            for resource, amount in self.produces.items():
+                self.resources[resource] += amount
+            return True
+        return False
+
+class EmergencyCenter(Building):
+    def __init__(self, id, resources=None, consumption=None, production=None, priority=1):
+        resources = resources or {}
+        consumption = consumption or {"electricity": 6, "water": 4, "basic_resources": 5}
+        production = production or {"personnel": 10, "critical_resources": 5}
+        
+        super().__init__(
+            id=id,
+            requires=consumption,
+            produces=production,
+            priority=priority
+        )
+                
+        for resource_type, amount in resources.items():
+            self.resources[resource_type] = amount
+            
+    def tick(self):
+        if super().tick():
+            # Produce personnel and critical resources
+            for resource, amount in self.produces.items():
+                self.resources[resource] += amount
+            return True
+        return False
