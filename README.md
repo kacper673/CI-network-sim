@@ -1,28 +1,39 @@
-# CI-network-sim
-Simulator of critical infrastructure network failures, attacks and resilience 
-Simulations shows the dependencies in every day infrostructre
+# Critical Infrastructure Simulator
 
-idea is to have mulitple graph layers connected, each graph representing one filed of infrostructer eg. power, water, telecom
+A simulation framework for modeling interdependencies in critical infrastructure systems.
 
-each layer consists of following:
+## Overview
 
- - node (objects in infrostucture eg. powerstation, telecom tower, hospital etc.)
-    each node has:
-     - state (online, offline, emergency power supply)
-     - attributes (eg. power, water preassure, priority)
-   
- - path (connection of objects in each layer, weight symbolizes either length of a pipe, distance of towers, etc.)
+This project provides a dynamic simulation of resource flows (electricity, water, supplies, personnel, data) between interconnected facilities through various infrastructure networks.
 
- - KPI (effectivnnes/healt factor, eg. % of electricty supply in simulation, % of water supply, avg. water preassure etc., in genereal metrics used to evaluate how helathy the layer is)
-   - KPI is calculated after dt
+## Project Structure
 
- - Cross Layer Dependencies (eg. power_station_1 is offline -> water_pump_2 is on emergency power -> emergency power supply runs out ->  KPI drops down)
+- `models.py` - Core simulation components (resources, layers, edges)
+- `buildings.py` - Building classes (hospitals, power plants, magazines)
+- `infrastructure.py` - Infrastructure network types (roads, power grid, water, etc.)
+- `test.py` - Example simulation implementation
 
+## Features
 
-   all graphs combined should look like something like this this:
+- Multiple building types with unique resource requirements and outputs
+- Various infrastructure networks with different capacities and travel times
+- Resource production, consumption, and transportation simulation
+- Time-based simulation with "tick" advancement
+- Singleton infrastructure layers for consistent network management
 
-   <img width="500" height="550" alt="pobrane" src="https://github.com/user-attachments/assets/d4be3bc2-14eb-4f82-8d48-fe3a9abe58df" />
+## Future Development
 
+- Additional building types for comprehensive infrastructure modeling
+- Attack and disruption simulation capabilities
+- Intelligent resource management algorithms
+- Visualization using NetworkX and Matplotlib
 
-   minimal UI (SFML?, OpenGUI?), json config files - different scenarios (cyber attack, physical damege etc.)
-   
+## Getting Started
+
+1. Clone the repository
+2. Run `test.py` to see a simple simulation in action
+3. Extend with custom building types or infrastructure networks
+
+## Requirements
+
+- Python 3.x
