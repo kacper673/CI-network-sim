@@ -1,7 +1,9 @@
 import csv
 import json
 from unittest import case
-
+import network as nx
+import matplotlib.pyplot as plt
+from matplotlib.animation import FuncAnimation
 import pandas as pd
 import buildings, models, infrastructure
 
@@ -16,9 +18,9 @@ class World:
         self.infrastructure_networks = {
             self.road_network.name: self.road_network,
             self.energy_grid.name: self.energy_grid,
-            self.water_network: self.water_network,
-            self.railway_network: self.railway_network,
-            self.road_network: self.road_network,             
+            self.water_network.name: self.water_network,
+            self.railway_network.name: self.railway_network,
+            self.road_network.name: self.road_network,             
             }
         self.buildings = {}
         self.edges = []
@@ -92,6 +94,88 @@ class World:
             "resources": resources
         }       
 
+    G_snapshots = []
+
+    def build_graph(self):
+        """Zbuduj graf NetworkX z aktualnego stanu świata."""
+        G = nx.DiGraph()
+
+        for b in self.buildings.values():
+            G.add_node(
+                b.id,
+                status=b.status,
+                priority=b.priority,
+                requires=b.requires,
+                produces=b.produces
+            )
+            
+        for e in self.edges:
+            G.add_edge(
+                e.from_node.id,
+                e.to_node.id,
+                layer=e.attributes.get("layer", "generic"),
+                capacity=e.attributes.get("capacity", 1.0),
+                travel_time=e.attributes.get("travel_time", 1),
+                status=e.attributes.get("status", "active")
+            )
+        return G
+
+    def capture_snapshot(self):
+        """Zapisz migawkę grafu po bieżącym ticku."""
+        if not hasattr(self, "_snapshots"):
+            self._snapshots = []
+        self._snapshots.append(self.build_graph())
+
+    def animate(self, interval_ms=800, seed=42):
+        """Pokaż animację z zebranych migawek."""
+        snaps = getattr(self, "_snapshots", [])
+        if not snaps:
+            print("Brak migawek do animacji – uruchom najpierw run()/capture_snapshot().")
+            return
+
+        fig, ax = plt.subplots(figsize=(8, 6))
+        pos = nx.spring_layout(snaps[0], seed=seed)  # stały układ
+
+        def update(frame):
+            ax.clear()
+            G = snaps[frame]
+
+            # kolory węzłów wg statusu
+            color_map = {"active": "green", "UPS": "yellow", "offline": "red"}
+            node_colors = [color_map.get(G.nodes[n].get("status","active"), "gray") for n in G.nodes()]
+
+            # krawędzie wg warstwy
+            edge_colors = []
+            for u,v,d in G.edges(data=True):
+                layer = d.get("layer","generic")
+                edge_colors.append({
+                    "Energy Grid":"dimgray",
+                    "Road Network":"cornflowerblue",
+                    "Water Network":"teal",
+                    "Railway Network":"saddlebrown",
+                    "Telecom Network":"purple"
+                }.get(layer, "lightgray"))
+
+            nx.draw(G, pos, ax=ax,
+                    node_color=node_colors, with_labels=True, arrows=True,
+                    edge_color=edge_colors)
+            ax.set_title(f"Tick {frame+1}")
+
+        FuncAnimation(fig, update, frames=len(snaps), interval=interval_ms)
+        plt.show()
+
+    def run_with_viz(self, ticks=10, capture_every_tick=True):
+        """Uruchom symulację i zbieraj migawki do animacji."""
+        print("Starting simulation")
+        self._snapshots = []
+        for _ in range(ticks):
+            self.tick()
+            if capture_every_tick:
+                self.capture_snapshot()
+            print(f"STATUS: {self.status_summary()}")
+        print("Simulation complete")
+        self.animate()
+
     def run(self, ticks=10):
         print("Starting simulation")
         for _ in range(ticks):
@@ -142,3 +226,4 @@ def create_world_from_csv(csv_path_buildings, csv_path_edges):
 
 
 w1 = create_world_from_csv("nodes.csv", "edges.csv")
+
