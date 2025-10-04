@@ -1,3 +1,4 @@
+from itertools import product
 from models import RESOURCE_TYPES
 
 class Building:
@@ -92,3 +93,53 @@ class Magazine(Building):
                 self.resources[resource] += amount
             return True
         return False
+
+class DataCenter(Building):
+    def __init__(self, id, resources=None, consumption=None, production=None, priority=2):
+        resources = resources or {}
+        consumption = consumption or {"electricity": 15, "water": 8}
+        production = production or {"data": 30} 
+
+        super().__init__(
+            id=id,
+            requires=consumption,
+            produces=production,
+            priority=priority
+        )
+
+        # Initialize resources
+        for resource_type, amount in resources.items():
+            self.resources[resource_type] = amount
+
+    def tick(self):
+        if super().tick():
+            # Produce data resources
+            for resource, amount in self.produces.items():
+                self.resources[resource] += amount
+            return True
+        return False
+
+class WaterPlant(Building):
+    def __init__(self, id, resource=None, consumption=None, production=None, priority=1):
+        resources = resources or {}
+        consumption = consumption or {}
+        production = production or {}
+
+        super().__init__(
+            id=id,
+            requires=consumption,
+            produces=production,
+            priority=priority
+        )
+
+        # Initialize resources
+        for resource_type, amount in resource.items():
+            self.resources[resource_type] = amount
+
+    def tick(self):
+        if super().tick():
+            # Produce water
+            for resource, amount in self.produces.items():
+                self.resources[resource] += amount
+            return True
+        return False        
