@@ -120,7 +120,7 @@ class DataCenter(Building):
         return False
 
 class WaterPlant(Building):
-    def __init__(self, id, resource=None, consumption=None, production=None, priority=1):
+    def __init__(self, id, resources=None, consumption=None, production=None, priority=1):
         resources = resources or {}
         consumption = consumption or {"electricity": 8}
         production = production or {"water": 25}
@@ -133,7 +133,7 @@ class WaterPlant(Building):
         )
 
         # Initialize resources
-        for resource_type, amount in resource.items():
+        for resource_type, amount in resources.items():
             self.resources[resource_type] = amount
 
     def tick(self):
