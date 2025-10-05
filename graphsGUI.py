@@ -1,3 +1,7 @@
+# Generalized edges simulation, the buildings and edges are grouped into categories, in top left
+# corner user can toggle the layer of communication they want to view and by hovering over the edges group
+# they can view information about each edge.
+
 from PyQt5.QtWidgets import QAction, QToolBar, QMainWindow, QGraphicsLineItem, QApplication, QGraphicsScene, QGraphicsView, QGraphicsRectItem, QGraphicsTextItem, QLabel
 from PyQt5.QtGui import QBrush, QPen, QFont, QColor
 from PyQt5.QtCore import Qt, QTimer
@@ -33,14 +37,13 @@ class BuildingNode:
         self.rect.hoverLeaveEvent = self.hoverLeaveEvent
         scene.addItem(self.rect)
 
-        # Separate label for building ID
+
         self.label = QGraphicsTextItem(f"{building.id}", parent=None)
         self.label.setFont(QFont("Arial", 8))
         self.label.setDefaultTextColor(Qt.black)
         self.label.setPos(x + 2, y + 2)
         scene.addItem(self.label)
 
-        # Floating QLabel for tooltip
         self.tooltip = QLabel(view)
         self.tooltip.setStyleSheet("background-color: grey; border: 1px solid black; padding: 2px;")
         self.tooltip.setWindowFlags(Qt.ToolTip)
