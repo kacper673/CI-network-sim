@@ -2,14 +2,17 @@ from itertools import product
 from models import RESOURCE_TYPES
 
 class Building:
-    def __init__(self, id, requires=None, produces=None, priority=1):
+    def __init__(self, id, requires=None, produces=None, priority=1,resources=None):
         self.id = id
         self.priority = priority
         self.requires = requires or {}
         self.produces = produces or {}
         self.status = "active"  # active, offline, destroyed
         self.resources = {resource: 0 for resource in RESOURCE_TYPES}
-        self.efficiency= 1.0
+        self.effciency = 1.0
+        if resources:
+            for r, v in resources.items():
+                self.resources[r] = v
 
     def works(self) -> bool:
         for resource, amount in self.requires.items():
@@ -40,7 +43,7 @@ class Building:
             required_amount = amount * self.efficiency
             if self.resources[resource] < required_amount:
                 return False
-        
+
         # Consume required resources
         for resource, amount in self.requires.items():
             required_amount = amount * self.efficiency
@@ -49,9 +52,8 @@ class Building:
         return True
         
     def receive_supplies(self, resource_type, amount):
-        """Generic method to receive supplies of any resource type"""
-        if resource_type in RESOURCE_TYPES:
-            self.resources[resource_type] += amount
+        self.resources[resource_type] = self.resources.get(resource_type, 0) + amount
+
 
 class Hospital(Building):
     def __init__(self, id, resources=None, consumption=None, priority=1):
