@@ -31,13 +31,30 @@ class Edge:
         self.to_node = to_node
         self.attributes = attributes
         self.resources_in_transit = {resource: [] for resource in RESOURCE_TYPES}
+
+        if "capacity" in attributes:
+            self.attributes["original_capacity"] = attributes["capacity"]
     
     def send_resource(self, resource_type, amount):
         """Send resources through this edge"""
+        if self.attributes.get("status") == "destroyed":
+            return False
+
         if self.from_node.resources.get(resource_type, 0) < amount:
             return False       
+
+        capacity_factor = 1.0
+        if self.attributes.get("status") == "damaged":
+            capacity_factor = 0.5
+
+        max_amount = amount
+        if "capacity" in self.attributes:
+            max_amount = min(amount, self.attributes["capacity"] * capacity_factor)
             
         travel_time = self.attributes.get("travel_time", 1)
+        if self.attributes.get("status") == "damaged":
+            travel_time = int(travel_time * 1.5)
+            
         self.resources_in_transit[resource_type].append({
             'amount': amount,
             'ticks_remaining': travel_time
