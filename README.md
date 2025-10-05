@@ -11,7 +11,8 @@ This project provides a dynamic simulation of resource flows (electricity, water
 - `models.py` - Core simulation components (resources, layers, edges)
 - `buildings.py` - Building classes (hospitals, power plants, magazines)
 - `infrastructure.py` - Infrastructure network types (roads, power grid, water, etc.)
-- `test.py` - Example simulation implementation
+- `simulation.py` - Example simulation implementation
+- `testUI.py` - Example simulation with UI
 
 ## Features
 
@@ -31,7 +32,7 @@ This project provides a dynamic simulation of resource flows (electricity, water
 ## Getting Started
 
 1. Clone the repository
-2. Run `test.py` to see a simple simulation in action
+2. Run `simulation.py` or `testUI.py` to see a simple simulation in action
 3. Extend with custom building types or infrastructure networks
 
 ## Requirements
