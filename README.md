@@ -13,7 +13,7 @@ This project simulates resource flows (electricity, water, supplies, personnel, 
 - `infrastructure.py` - Infrastructure network types with singleton pattern
 - `csv_world_import.py` - World management and CSV import/export utilities
 - `simulation.py` - Simulation scenarios and attack/recovery implementations
-- `testUI.py` - Visualization interface using NetworkX
+- `testUI.py` - Visualization interface using NetworkX and Matplotlib
 
 ## Features
 
@@ -32,6 +32,7 @@ This project simulates resource flows (electricity, water, supplies, personnel, 
 2. Install dependencies: `pip install pandas networkx matplotlib`
 3. Run `python simulation.py` to execute a sample simulation
 4. Or run `python csv_world_import.py` to load from CSV files
+5. Or run `testUI.py` to run sample simulation with UI
 
 ## Extending the System
 
