@@ -48,8 +48,7 @@ class Building:
         for resource, amount in self.requires.items():
             required_amount = amount * self.efficiency
             self.resources[resource] -= required_amount
-            self.resources[resource] -= amount
-
+            
         return True
         
     def receive_supplies(self, resource_type, amount):
@@ -93,7 +92,8 @@ class PowerPlant(Building):
         if super().tick():
             # Produce resources
             for resource, amount in self.produces.items():
-                self.resources[resource] += amount
+                produced_amount = amount * self.efficiency
+                self.resources[resource] += produced_amount
             return True
         return False
 
@@ -118,7 +118,8 @@ class Magazine(Building):
         if super().tick():
             # Produce resources
             for resource, amount in self.produces.items():
-                self.resources[resource] += amount
+                produced_amount = amount * self.efficiency
+                self.resources[resource] += produced_amount
             return True
         return False
 
@@ -143,7 +144,8 @@ class DataCenter(Building):
         if super().tick():
             # Produce data resources
             for resource, amount in self.produces.items():
-                self.resources[resource] += amount
+                produced_amount = amount * self.efficiency
+                self.resources[resource] += produced_amount
             return True
         return False
 
@@ -168,7 +170,8 @@ class WaterPlant(Building):
         if super().tick():
             # Produce water
             for resource, amount in self.produces.items():
-                self.resources[resource] += amount
+                produced_amount = amount * self.efficiency
+                self.resources[resource] += produced_amount
             return True
         return False        
 

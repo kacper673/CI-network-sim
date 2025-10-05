@@ -31,6 +31,9 @@ class Edge:
         self.to_node = to_node
         self.attributes = attributes
         self.resources_in_transit = {resource: [] for resource in RESOURCE_TYPES}
+
+        if "capacity" in attributes:
+            self.attributes["original_capacity"] = attributes["capacity"]
     
     def send_resource(self, resource_type, amount):
         """Send resources through this edge"""

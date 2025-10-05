@@ -13,14 +13,15 @@ class World:
         self.road_network = infrastructure.RoadNetwork()
         self.energy_grid = infrastructure.EnergyGrid()
         self.water_network = infrastructure.WaterNetwork()
-        self.railway_network = infrastructure.RailwayNetwork()
+        self.railway_network = infrastructure.RailwayNetwork()        
         self.telecom_network = infrastructure.TelecomNetwork()
+        
         self.infrastructure_networks = {
             self.road_network.name: self.road_network,
             self.energy_grid.name: self.energy_grid,
             self.water_network.name: self.water_network,
             self.railway_network.name: self.railway_network,
-            self.telecom_network.name: self.telecom_network,       
+            self.telecom_network.name: self.telecom_network,
             }
         self.buildings = {}
         self.edges = []
@@ -40,6 +41,13 @@ class World:
     def tick(self):
         self.current_tick += 1
 
+        for building in self.buildings.values():
+            building.update_status()
+
+        for building in sorted([b for b in self.buildings.values() if not b.produces and b.status == "active"], key=lambda b: b.priority):
+            success = building.tick()
+            print(f"{building.id} operational: {success}")
+
         for building in sorted([b for b in self.buildings.values() if b.produces and b.status == "active"], key=lambda b: b.priority):
             if building.tick():
                 print(f"{building.id} produced resources")
@@ -48,11 +56,7 @@ class World:
         for edge in self.edges:
             if edge.attributes.get("status", "active") != "destroyed":
                 edge.tick()
-
-        for building in sorted([b for b in self.buildings.values() if not b.produces and b.status == "active"], key=lambda b: b.priority):
-            success = building.tick()
-            print(f"{building.id} operational: {success}")
-
+        
         return self.current_tick    
 
     def distribute_resources(self, building):
@@ -62,11 +66,11 @@ class World:
             return
 
         for resource, amount in building.produces.items():
-            avalible = building.resources.get(resource, 0)
-            if avalible <= 0:
+            availible = building.resources.get(resource, 0)
+            if availible <= 0:
                 continue
 
-            amount_per_edge = min(avalible, amount) / len(outgoing_edges)
+            amount_per_edge = min(availible, amount) / len(outgoing_edges)
             
             for edge in outgoing_edges:
                 if amount_per_edge <= 0: #min(avalible, amount)
@@ -78,6 +82,7 @@ class World:
                     send_amount = amount_per_edge
 
                 building.resources[resource] -= send_amount
+                
                 edge.send_resource(resource, send_amount)
                 print(f"Sent {send_amount} {resource} from {building.id} to {edge.to_node.id}")
 
@@ -142,39 +147,40 @@ class World:
             else:
                 building.status = "degraded"
                 building.efficiency = 1.0 - severity
-
+                
                 for resource in building.resources:
                     building.resources[resource] *= int((1 - severity))
 
             print(f"Attack on {building.id}: {old_status} -> {building.status}")  
             attacked_sth = True
-            for edge in self.edges:
+
+        for edge in self.edges:
         # Match by layer name, or if edge connects to/from target
-                if (edge.attributes.get("layer") == target_id or 
-                    edge.from_node.id == target_id or 
-                    edge.to_node.id == target_id):
+            if (edge.attributes.get("layer") == target_id or 
+                edge.from_node.id == target_id or 
+                edge.to_node.id == target_id):
 
-                    old_status = edge.attributes.get("status", "active")
+                old_status = edge.attributes.get("status", "active")
 
-                    if severity > 0.8:
-                        edge.attributes["status"] = "destroyed"
-                    elif severity > 0.5:
-                        edge.attributes["status"] = "damaged"
-                        # Store original capacity if not already stored
-                        if "original_capacity" not in edge.attributes and "capacity" in edge.attributes:
-                            edge.attributes["original_capacity"] = edge.attributes["capacity"]
-                        # Reduce capacity
-                        if "capacity" in edge.attributes:
-                            edge.attributes["capacity"] = int(edge.attributes["capacity"] * (1 - severity))
-                    else:
-                        # Just reduce capacity
-                        if "original_capacity" not in edge.attributes and "capacity" in edge.attributes:
-                            edge.attributes["original_capacity"] = edge.attributes["capacity"]
-                        if "capacity" in edge.attributes:
-                            edge.attributes["capacity"] = int(edge.attributes["capacity"] * (1 - severity))
+                if severity > 0.8:
+                    edge.attributes["status"] = "destroyed"
+                elif severity > 0.5:
+                    edge.attributes["status"] = "damaged"
+                    # Store original capacity if not already stored
+                    if "original_capacity" not in edge.attributes and "capacity" in edge.attributes:
+                        edge.attributes["original_capacity"] = edge.attributes["capacity"]
+                    # Reduce capacity
+                    if "capacity" in edge.attributes:
+                        edge.attributes["capacity"] = int(edge.attributes["capacity"] * (1 - severity))
+                else:
+                    # Just reduce capacity
+                    if "original_capacity" not in edge.attributes and "capacity" in edge.attributes:
+                        edge.attributes["original_capacity"] = edge.attributes["capacity"]
+                    if "capacity" in edge.attributes:
+                        edge.attributes["capacity"] = int(edge.attributes["capacity"] * (1 - severity))
 
-                    print(f"Attack on {edge.attributes.get('layer', 'unknown')} connection {edge.from_node.id}->{edge.to_node.id}: {old_status} -> {edge.attributes.get('status', 'active')}")
-                    attacked_something = True
+                print(f"Attack on {edge.attributes.get('layer', 'unknown')} connection {edge.from_node.id}->{edge.to_node.id}: {old_status} -> {edge.attributes.get('status', 'active')}")
+                attacked_something = True
 
         if not attacked_something and "-" in target_id:
             parts = target_id.split("-")
@@ -200,19 +206,18 @@ class World:
                                 edge.attributes["original_capacity"] = edge.attributes["capacity"]
                             if "capacity" in edge.attributes:
                                 edge.attributes["capacity"] = int(edge.attributes["capacity"] * (1 - severity))
-
+                    
                         print(f"Attack on connection {edge.from_node.id}->{edge.to_node.id}: {old_status} -> {edge.attributes.get('status', 'active')}")
                         attacked_something = True
 
         if not attacked_something:
             print(f"No valid target found for attack")
-
+        
         return attacked_something
-    
 
     def execute_recovery(self, target_id=None, repair_level=0.8):
         recovered_something = False
-
+    
         # Recover a specific building
         if target_id in self.buildings:
             building = self.buildings[target_id]
@@ -226,6 +231,7 @@ class World:
                 else:
                     building.status = "degraded"
                     building.efficiency = repair_level
+
                 print(f"Recovery of {building.id}: {old_status} -> {building.status}")
                 recovered_something = True
             else:
@@ -256,9 +262,9 @@ class World:
                     print(f"Recovery of {edge.attributes.get('layer', 'unknown')} connection {edge.from_node.id}->{edge.to_node.id}: {old_status} -> {edge.attributes.get('status', 'active')}")
                     recovered_something = True
                 else:
-                    print(f"Cannot recover destroyed connection {edge.from_node.id}->{edge.to_node.id}")  
+                    print(f"Cannot recover destroyed connection {edge.from_node.id}->{edge.to_node.id}")
 
-         # Check for specific edge format "from-to"
+        # Check for specific edge format "from-to"
         if not recovered_something and "-" in target_id:
             parts = target_id.split("-")
             if len(parts) == 2:
