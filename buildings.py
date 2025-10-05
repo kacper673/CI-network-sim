@@ -9,7 +9,7 @@ class Building:
         self.produces = produces or {}
         self.status = "active"  # active, offline, destroyed
         self.resources = {resource: 0 for resource in RESOURCE_TYPES}
-        self.effciency = 1.0
+        self.efficiency = 1.0
         if resources:
             for r, v in resources.items():
                 self.resources[r] = v

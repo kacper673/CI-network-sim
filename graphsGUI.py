@@ -4,6 +4,7 @@ from PyQt5.QtCore import Qt, QTimer
 import buildings
 import sys
 from csv_world_import import World, create_world_from_csv
+from models import Edge, Layer
 
 NODE_WIDTH = 50
 NODE_HEIGHT = 30
@@ -11,10 +12,6 @@ NODE_DISTANCE = 5
 GROUP_WIDTH = 400
 GROUP_HEIGHT = 600
 
-
-# Example building object (make sure produces and requires exist)
-b1 = buildings.PowerPlant("PP0001", resources={"water": 5})
-b2 = buildings.WaterPlant("WP0002", resources={"electricity": 5})
 
 class BuildingNode:
     def __init__(self, scene, view, x, y, w, h, building, group):
@@ -74,8 +71,8 @@ class BuildingNode:
 
 
 class BuildingGroup(QGraphicsRectItem):
-    nodes = []
     def __init__(self, x, y, w, h, name, scene, r, g, b, a):
+        self.nodes = []
         self.x = x
         self.y = y
         self.w = w
@@ -105,12 +102,13 @@ class BuildingGroup(QGraphicsRectItem):
             rel_x = self.w - NODE_WIDTH
 
         rel_y = self.h - (1+(n//2)) * (NODE_HEIGHT + NODE_DISTANCE) if self.y > 0 else (n//2) * (NODE_HEIGHT + NODE_DISTANCE)
+        print(node.building.id, rel_x, rel_y, self.y, n//2)
         node.x = rel_x + self.x
         node.y = rel_y + self.y
         node.rect.setParentItem(self)
         node.label.setParentItem(self)
         node.rect.setPos(rel_x, rel_y)
-        node.label.setPos(rel_x, rel_y )
+        node.label.setPos(rel_x + 2, rel_y + 2)
         self.nodes.append(node)
 
 
@@ -198,6 +196,8 @@ class GuiEdge:
         self.layer = layer
         self.group1 = from_node.group
         self.group2 = to_node.group
+        self.from_group = from_node.group
+        self.to_group = to_node.group
 
         self.general_edge = self.does_general_edge_exist(self.group1, self.group2, self.layer)
         atr_str = str(attributes)
@@ -211,14 +211,18 @@ class GuiEdge:
         to_line_x1 = self.general_edge.finish_segment.x1
         to_line_x2 = self.to_node.x + NODE_WIDTH if to_node.x < to_line_x1 else self.to_node.x
 
-        line1 = QGraphicsLineItem(from_line_x1, from_line_y, from_line_x2, from_line_y)
-        line1.setPen(QPen(Qt.black, 3))
-        scene.addItem(line1)
-        line1.view = view
-        line2 = QGraphicsLineItem(to_line_x1, to_line_y, to_line_x2, to_line_y)
-        line2.setPen(QPen(Qt.black, 3))
-        scene.addItem(line2)
-        line2.view = view
+        self.line1 = QGraphicsLineItem(from_line_x1, from_line_y, from_line_x2, from_line_y)
+        self.line1.setPen(QPen(Qt.black, 3))
+        self.scene.addItem(self.line1)
+        self.line1.view = view
+        self.line2 = QGraphicsLineItem(to_line_x1, to_line_y, to_line_x2, to_line_y)
+        self.line2.setPen(QPen(Qt.black, 3))
+        self.scene.addItem(self.line2)
+        self.line2.view = view
+    def toggle_visibility(self, visible):
+        self.line1.setVisible(visible)
+        self.line2.setVisible(visible)
+
 
     def does_general_edge_exist(self, from_group, to_group, layer):
         for gedge in layer:
@@ -239,6 +243,7 @@ class MainWindow(QMainWindow):
         self.setCentralWidget(self.view)
 
         self.world = world
+        self.nodes = {}
         self.power_group = BuildingGroup(0,400, GROUP_WIDTH, GROUP_HEIGHT, "pg", self.scene, 110, 255, 145, 20)
         self.water_group = BuildingGroup(1200, -1000, GROUP_WIDTH, GROUP_HEIGHT, "pg", self.scene, 110, 255, 245, 20)
         self.data_group = BuildingGroup(0, -1000, GROUP_WIDTH, GROUP_HEIGHT, "pg", self.scene, 110, 255, 245, 20)
@@ -248,31 +253,65 @@ class MainWindow(QMainWindow):
             first_two = ID[0:2]
             group = None
             match first_two:
-                case "PP":
+                case "PO":
                     group = self.power_group
-                case "WP":
+                case "WA":
                     group = self.water_group
-                case "MG":
+                case "MA":
                     group = self.magazine_group
-                case "HP":
+                case "HO":
                     group = self.hospital_group
-                case "DC":
+                case "DA":
                     group = self.data_group
+                case _:
+                    continue
             node = BuildingNode(self.scene, self.view, 0, 0, NODE_HEIGHT, NODE_WIDTH, building, group)
+            self.nodes[node.building.id] = node
             group.add_node(node)
+
+
         self.tick_count = 0
         self.timer = QTimer()
         self.timer.timeout.connect(self.tick)
         self.timer.start(1000)
         self.layers = {
+
             "electricity":[],
             "water":[],
-            "basic_resources":[],
-            "critical_resources":[],
-            "heavy_resources":[],
-            "personnel":[],
+            "road":[],
+            "railway":[],
             "data":[]
         }
+        for edge in self.world.energy_grid.edges:
+            node_from = self.nodes[edge.from_node.id]
+            node_to = self.nodes[edge.to_node.id]
+            new_edge_gui = GuiEdge(node_from, node_to, self.scene,self.view, self.layers["electricity"], edge.attributes)
+            self.layers["electricity"].append(new_edge_gui)
+
+        for edge in self.world.water_network.edges:
+            node_from = self.nodes[edge.from_node.id]
+            node_to = self.nodes[edge.to_node.id]
+            new_edge_gui = GuiEdge(node_from, node_to, self.scene, self.view, self.layers["water"], edge.attributes)
+            self.layers["water"].append(new_edge_gui)
+
+        for edge in self.world.road_network.edges:
+            node_from = self.nodes[edge.from_node.id]
+            node_to = self.nodes[edge.to_node.id]
+            new_edge_gui = GuiEdge(node_from, node_to, self.scene, self.view, self.layers["road"], edge.attributes)
+            self.layers["road"].append(new_edge_gui)
+
+        for edge in self.world.railway_network.edges:
+            node_from = self.nodes[edge.from_node.id]
+            node_to = self.nodes[edge.to_node.id]
+            new_edge_gui = GuiEdge(node_from, node_to, self.scene, self.view, self.layers["railway"], edge.attributes)
+            self.layers["railway"].append(new_edge_gui)
+
+        for edge in self.world.telecom_network.edges:
+            node_from = self.nodes[edge.from_node.id]
+            node_to = self.nodes[edge.to_node.id]
+            new_edge_gui = GuiEdge(node_from, node_to, self.scene, self.view, self.layers["data"], edge.attributes)
+            self.layers["data"].append(new_edge_gui)
+
         toolbar = QToolBar("Layers")
         toolbar.setFloatable(True)
         self.addToolBar(toolbar)
@@ -289,8 +328,10 @@ class MainWindow(QMainWindow):
 
 
     def tick(self):
+        self.world.tick()
+        for id, node in self.nodes.items():
+            node.updateNode()
         self.tick_count += 1
-
 
 
 w1 = create_world_from_csv("big_nodes.csv", "big_edges.csv")
