@@ -20,6 +20,7 @@ class World:
             self.energy_grid.name: self.energy_grid,
             self.water_network.name: self.water_network,
             self.railway_network.name: self.railway_network,
+            self.telecom_network.name: self.telecom_network,
             self.road_network.name: self.road_network,             
             }
         self.buildings = {}
@@ -127,6 +128,168 @@ class World:
     def log_status(self):
         self.history.append(self.status_summary())
 
+    def execute_attack(self, target_id=None, severity=0.5):
+        attacked_something = False
+        if target_id in self.buildings:
+            building = self.buildings[target_id]
+            old_status = building.status
+
+            if severity > 0.8:
+                building.status = "destroyed"
+                building.efficiency = 0.0
+            elif severity > 0.5:
+                building.status = "offline"
+                building.efficiency = 0.2
+            else:
+                building.status = "degraded"
+                building.efficiency = 1.0 - severity
+
+                for resource in building.resources:
+                    building.resources[resource] *= int((1 - severity))
+
+            print(f"Attack on {building.id}: {old_status} -> {building.status}")  
+            attacked_sth = True
+            for edge in self.edges:
+        # Match by layer name, or if edge connects to/from target
+            if (edge.attributes.get("layer") == target_id or 
+                edge.from_node.id == target_id or 
+                edge.to_node.id == target_id):
+
+                old_status = edge.attributes.get("status", "active")
+
+                if severity > 0.8:
+                    edge.attributes["status"] = "destroyed"
+                elif severity > 0.5:
+                    edge.attributes["status"] = "damaged"
+                    # Store original capacity if not already stored
+                    if "original_capacity" not in edge.attributes and "capacity" in edge.attributes:
+                        edge.attributes["original_capacity"] = edge.attributes["capacity"]
+                    # Reduce capacity
+                    if "capacity" in edge.attributes:
+                        edge.attributes["capacity"] = int(edge.attributes["capacity"] * (1 - severity))
+                else:
+                    # Just reduce capacity
+                    if "original_capacity" not in edge.attributes and "capacity" in edge.attributes:
+                        edge.attributes["original_capacity"] = edge.attributes["capacity"]
+                    if "capacity" in edge.attributes:
+                        edge.attributes["capacity"] = int(edge.attributes["capacity"] * (1 - severity))
+
+                print(f"Attack on {edge.attributes.get('layer', 'unknown')} connection {edge.from_node.id}->{edge.to_node.id}: {old_status} -> {edge.attributes.get('status', 'active')}")
+                attacked_something = True
+
+        if not attacked_something and "-" in target_id:
+            parts = target_id.split("-")
+            if len(parts) == 2:
+                from_id, to_id = parts
+                for edge in self.edges:
+                    if edge.from_node.id == from_id and edge.to_node.id == to_id:
+                        old_status = edge.attributes.get("status", "active")
+
+                        if severity > 0.8:
+                            edge.attributes["status"] = "destroyed"
+                        elif severity > 0.5:
+                            edge.attributes["status"] = "damaged"
+                            # Store original capacity if not already stored
+                            if "original_capacity" not in edge.attributes and "capacity" in edge.attributes:
+                                edge.attributes["original_capacity"] = edge.attributes["capacity"]
+                            # Reduce capacity
+                            if "capacity" in edge.attributes:
+                                edge.attributes["capacity"] = int(edge.attributes["capacity"] * (1 - severity))
+                        else:
+                            # Just reduce capacity
+                            if "original_capacity" not in edge.attributes and "capacity" in edge.attributes:
+                                edge.attributes["original_capacity"] = edge.attributes["capacity"]
+                            if "capacity" in edge.attributes:
+                                edge.attributes["capacity"] = int(edge.attributes["capacity"] * (1 - severity))
+
+                        print(f"Attack on connection {edge.from_node.id}->{edge.to_node.id}: {old_status} -> {edge.attributes.get('status', 'active')}")
+                        attacked_something = True
+
+        if not attacked_something:
+            print(f"No valid target found for attack")
+
+        return attacked_something
+    
+
+    def execute_recovery(self, target_id=None, repair_level=0.8):
+        recovered_something = False
+
+        # Recover a specific building
+        if target_id in self.buildings:
+            building = self.buildings[target_id]
+            old_status = building.status
+
+            # Can't recover destroyed buildings
+            if building.status != "destroyed":
+                if repair_level > 0.8:
+                    building.status = "active"
+                    building.efficiency = 1.0
+                else:
+                    building.status = "degraded"
+                    building.efficiency = repair_level
+                print(f"Recovery of {building.id}: {old_status} -> {building.status}")
+                recovered_something = True
+            else:
+                print(f"Cannot recover destroyed building {building.id}")
+
+        # Recover infrastructure connection
+        for edge in self.edges:
+            # Match by layer name, or if edge connects to/from target
+            if (edge.attributes.get("layer") == target_id or 
+                edge.from_node.id == target_id or 
+                edge.to_node.id == target_id):
+
+                old_status = edge.attributes.get("status", "active")
+
+                # Can't recover destroyed infrastructure
+                if old_status != "destroyed":
+                    if repair_level > 0.8:
+                        edge.attributes["status"] = "active"
+                        # Restore original capacity if available
+                        if "original_capacity" in edge.attributes:
+                            edge.attributes["capacity"] = edge.attributes["original_capacity"]
+                    else:
+                        # Improve but not fully recover
+                        if old_status == "damaged":
+                            if "original_capacity" in edge.attributes:
+                                edge.attributes["capacity"] = int(edge.attributes["original_capacity"] * repair_level)
+
+                    print(f"Recovery of {edge.attributes.get('layer', 'unknown')} connection {edge.from_node.id}->{edge.to_node.id}: {old_status} -> {edge.attributes.get('status', 'active')}")
+                    recovered_something = True
+                else:
+                    print(f"Cannot recover destroyed connection {edge.from_node.id}->{edge.to_node.id}")  
+
+         # Check for specific edge format "from-to"
+        if not recovered_something and "-" in target_id:
+            parts = target_id.split("-")
+            if len(parts) == 2:
+                from_id, to_id = parts
+                for edge in self.edges:
+                    if edge.from_node.id == from_id and edge.to_node.id == to_id:
+                        old_status = edge.attributes.get("status", "active")
+
+                        # Can't recover destroyed infrastructure
+                        if old_status != "destroyed":
+                            if repair_level > 0.8:
+                                edge.attributes["status"] = "active"
+                                # Restore original capacity if available
+                                if "original_capacity" in edge.attributes:
+                                    edge.attributes["capacity"] = edge.attributes["original_capacity"]
+                            else:
+                                # Improve but not fully recover
+                                if old_status == "damaged":
+                                    if "original_capacity" in edge.attributes:
+                                        edge.attributes["capacity"] = int(edge.attributes["original_capacity"] * repair_level)
+
+                            print(f"Recovery of connection {edge.from_node.id}->{edge.to_node.id}: {old_status} -> {edge.attributes.get('status', 'active')}")
+                            recovered_something = True
+                        else:
+                            print(f"Cannot recover destroyed connection {edge.from_node.id}->{edge.to_node.id}")
+
+        if not recovered_something:
+            print(f"No valid target found for recovery: {target_id}")
+
+        return recovered_something
 
     
     def build_graph(self):
