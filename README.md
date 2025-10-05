@@ -47,3 +47,4 @@ This project simulates resource flows (electricity, water, supplies, personnel, 
 - pandas
 - networkx
 - matplotlib
+- pyQT
