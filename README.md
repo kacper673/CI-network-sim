@@ -1,39 +1,48 @@
-# Critical Infrastructure Simulator
+# Critical Infrastructure Resilience Simulator
 
-A simulation framework for modeling interdependencies in critical infrastructure systems.
+A comprehensive framework for modeling interdependencies, vulnerabilities, and attack scenarios in critical infrastructure systems.
 
 ## Overview
 
-This project provides a dynamic simulation of resource flows (electricity, water, supplies, personnel, data) between interconnected facilities through various infrastructure networks.
+This project simulates resource flows (electricity, water, supplies, personnel, data) between interconnected facilities through various infrastructure networks. It models building operations, resource consumption/production, and infrastructure status while accounting for cascading effects during normal operations and crisis scenarios.
 
 ## Project Structure
 
 - `models.py` - Core simulation components (resources, layers, edges)
-- `buildings.py` - Building classes (hospitals, power plants, magazines)
-- `infrastructure.py` - Infrastructure network types (roads, power grid, water, etc.)
-- `test.py` - Example simulation implementation
+- `buildings.py` - Building classes with unique resource requirements and outputs
+- `infrastructure.py` - Infrastructure network types with singleton pattern
+- `csv_world_import.py` - World management and CSV import/export utilities
+- `simulation.py` - Simulation scenarios and attack/recovery implementations
+- `testUI.py` - Visualization interface using NetworkX
 
 ## Features
 
-- Multiple building types with unique resource requirements and outputs
-- Various infrastructure networks with different capacities and travel times
+- Diverse building types (hospitals, power plants, data centers, etc.)
+- Multiple infrastructure network types with varying capacities
 - Resource production, consumption, and transportation simulation
-- Time-based simulation with "tick" advancement
-- Singleton infrastructure layers for consistent network management
-
-## Future Development
-
-- Additional building types for comprehensive infrastructure modeling
-- Attack and disruption simulation capabilities
-- Intelligent resource management algorithms
-- Visualization using NetworkX and Matplotlib
+- Building and infrastructure damage/recovery modeling
+- Attack simulation with variable severity levels
+- Status tracking for all components
+- CSV import/export for scenario management
+- Visualization capabilities
 
 ## Getting Started
 
 1. Clone the repository
-2. Run `test.py` to see a simple simulation in action
-3. Extend with custom building types or infrastructure networks
+2. Install dependencies: `pip install pandas networkx matplotlib`
+3. Run `python simulation.py` to execute a sample simulation
+4. Or run `python csv_world_import.py` to load from CSV files
+
+## Extending the System
+
+- Add new building types in `buildings.py`
+- Create custom scenarios in `simulation.py`
+- Define custom attacks and recoveries using the World class methods
+- Let user create custom buildings, infrastructure and resources
 
 ## Requirements
 
 - Python 3.x
+- pandas
+- networkx
+- matplotlib
