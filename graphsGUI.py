@@ -59,7 +59,6 @@ class BuildingNode:
         view_pos = self.view.mapFromScene(scene_pos)
         global_pos = self.view.viewport().mapToGlobal(view_pos)
 
-        # Move tooltip in screen coords
         self.tooltip.move(global_pos.x(), global_pos.y() - self.tooltip.height() - 5)
         self.tooltip.show()
 
@@ -69,7 +68,7 @@ class BuildingNode:
     def updateNode(self):
         self.rect.setBrush(QBrush(Qt.green if self.building.status == "active" else Qt.red))
 
-
+# grupa budynkow (np. elektrownie, pompy wodne itp)
 class BuildingGroup(QGraphicsRectItem):
     def __init__(self, x, y, w, h, name, scene, r, g, b, a):
         self.nodes = []
@@ -84,14 +83,12 @@ class BuildingGroup(QGraphicsRectItem):
         self.setBrush(QBrush(green_transparent))  # see-through
 
 
-        # Group label
         label = QGraphicsTextItem(name, self)
         font = QFont("Arial", 10, QFont.Bold)
         label.setFont(font)
         label.setDefaultTextColor(Qt.darkBlue)
         label.setPos(5, 5)
 
-        # Add to scene
         scene.addItem(self)
 
     def add_node(self, node):
@@ -111,7 +108,7 @@ class BuildingGroup(QGraphicsRectItem):
         node.label.setPos(rel_x + 2, rel_y + 2)
         self.nodes.append(node)
 
-
+# 2 pionowe i 1 poziomy element, po najechaniu wypisuje polaczenia i wlasciosci polaczen
 class GeneralEdgeSegment(QGraphicsLineItem):
     edges = []
     def __init__(self, x1, y1, x2, y2, info, scene, view):
@@ -128,7 +125,7 @@ class GeneralEdgeSegment(QGraphicsLineItem):
         self.info = info
         self.view = view
 
-        # floating QLabel tooltip
+
         self.tooltip = QLabel(view)
         self.tooltip.setStyleSheet("background-color: grey; border: 1px solid black; padding: 2px;")
         self.tooltip.setWindowFlags(Qt.ToolTip)
@@ -137,25 +134,22 @@ class GeneralEdgeSegment(QGraphicsLineItem):
         scene.addItem(self)
 
     def hoverEnterEvent(self, event):
-        # highlight line
+
         self.setPen(QPen(Qt.red, 9))
 
-        # show tooltip
         self.tooltip.setText(self.info)
         self.tooltip.adjustSize()
 
-        # position tooltip above start point
         view_pos = self.view.mapFromScene(self.line().p1())
         global_pos = self.view.viewport().mapToGlobal(view_pos)
         self.tooltip.move(global_pos.x(), global_pos.y() - self.tooltip.height() - 5)
         self.tooltip.show()
 
     def hoverLeaveEvent(self, event):
-        # reset line
         self.tooltip.hide()
         self.setPen(QPen(Qt.black, 9))
 
-
+# generalizacja krawedzi wychodzacych/wchodzacych do danej grupy
 class GeneralEdge:
     def __init__(self, from_group, to_group, scene, view):
         self.from_group = from_group
@@ -245,9 +239,9 @@ class MainWindow(QMainWindow):
         self.world = world
         self.nodes = {}
         self.power_group = BuildingGroup(0,400, GROUP_WIDTH, GROUP_HEIGHT, "pg", self.scene, 110, 255, 145, 20)
-        self.water_group = BuildingGroup(1200, -1000, GROUP_WIDTH, GROUP_HEIGHT, "pg", self.scene, 110, 255, 245, 20)
-        self.data_group = BuildingGroup(0, -1000, GROUP_WIDTH, GROUP_HEIGHT, "pg", self.scene, 110, 255, 245, 20)
-        self.hospital_group = BuildingGroup(1200, 400, GROUP_WIDTH, GROUP_HEIGHT, "pg", self.scene, 110, 255, 245, 20)
+        self.water_group = BuildingGroup(1200, -1000, GROUP_WIDTH, GROUP_HEIGHT, "pg", self.scene, 0, 0, 255, 70)
+        self.data_group = BuildingGroup(0, -1000, GROUP_WIDTH, GROUP_HEIGHT, "pg", self.scene, 173, 0, 206, 25)
+        self.hospital_group = BuildingGroup(1200, 400, GROUP_WIDTH, GROUP_HEIGHT, "pg", self.scene, 173, 0, 0, 40)
         self.magazine_group = BuildingGroup(600, 400, GROUP_WIDTH, GROUP_HEIGHT, "pg", self.scene, 110, 255, 245, 20)
         for ID, building in self.world.buildings.items():
             first_two = ID[0:2]
