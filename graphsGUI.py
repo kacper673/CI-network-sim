@@ -1,8 +1,15 @@
-from PyQt5.QtWidgets import QApplication, QGraphicsScene, QGraphicsView, QGraphicsRectItem, QGraphicsTextItem, QLabel
-from PyQt5.QtGui import QBrush, QPen, QFont, QColor
+from PyQt5.QtWidgets import QGraphicsLineItem, QApplication, QGraphicsScene, QGraphicsView, QGraphicsRectItem, QGraphicsTextItem, QLabel
+from PyQt5.QtGui import QBrush, QPen, QFont, QColor, QPainter
 from PyQt5.QtCore import Qt, QTimer
 import buildings
 import sys
+
+
+NODE_WIDTH = 50
+NODE_HEIGHT = 30
+
+GROUP_WIDTH = 200
+GROUP_HEIGHT = 300
 
 app = QApplication([])
 
@@ -70,7 +77,12 @@ class BuildingNode:
 
 
 class BuildingGroup(QGraphicsRectItem):
+    nodes = []
     def __init__(self, x, y, w, h, name, scene, r, g, b, a):
+        self.x = x
+        self.y = y
+        self.w = w
+        self.h = h
         super().__init__(0, 0, w, h)
         self.setPos(x, y)
         green_transparent = QBrush(QColor(r, g, b, a))
@@ -93,18 +105,86 @@ class BuildingGroup(QGraphicsRectItem):
         node.label.setParentItem(self)
         node.rect.setPos(rel_x, rel_y)
         node.label.setPos(rel_x + 2, rel_y + 2)
+        self.nodes.append(node)
 
-node1 = BuildingNode(scene, view, 0, 0, 30, 30, b1)
-power_group = BuildingGroup(0,300, 200, 300, "pg", scene, 110, 255, 145, 20)
+
+class GeneralEdgeSegment(QGraphicsLineItem):
+    edges = []
+    def __init__(self, x1, y1, x2, y2, info, scene, view):
+        super().__init__(x1, y1, x2, y2)
+        pen = QPen(Qt.black, 9)
+        pen.setCosmetic(True)
+        self.setPen(pen)
+        self.setAcceptHoverEvents(True)
+
+        self.info = info
+        self.view = view
+
+        # floating QLabel tooltip
+        self.tooltip = QLabel(view)
+        self.tooltip.setStyleSheet("background-color: grey; border: 1px solid black; padding: 2px;")
+        self.tooltip.setWindowFlags(Qt.ToolTip)
+        self.tooltip.hide()
+
+        scene.addItem(self)
+
+    def hoverEnterEvent(self, event):
+        # highlight line
+        self.setPen(QPen(Qt.red, 9))
+
+        # show tooltip
+        self.tooltip.setText(self.info)
+        self.tooltip.adjustSize()
+
+        # position tooltip above start point
+        view_pos = self.view.mapFromScene(self.line().p1())
+        global_pos = self.view.viewport().mapToGlobal(view_pos)
+        self.tooltip.move(global_pos.x(), global_pos.y() - self.tooltip.height() - 5)
+        self.tooltip.show()
+
+    def hoverLeaveEvent(self, event):
+        # reset line
+        self.tooltip.hide()
+        self.setPen(QPen(Qt.black, 9))
+
+
+class GeneralEdge:
+    def __init__(self, from_group, to_group, scene, view):
+        self.from_group = from_group
+        self.to_group = to_group
+        self.from_group_middle_axis = from_group.x + from_group.w / 2
+        self.to_group_middle_axis = to_group.x + to_group.w / 2
+
+        origin_segment = GeneralEdgeSegment(self.from_group_middle_axis,
+                                            from_group.y + from_group.h - NODE_HEIGHT if from_group.y > 0 else from_group.y - from_group.h + NODE_HEIGHT,
+                                            self.from_group_middle_axis,
+                                            0,
+                                            "jol",
+                                            scene, view)
+
+        middle_segment = GeneralEdgeSegment(self.from_group_middle_axis, 0, self.to_group_middle_axis, 0, "jol", scene, view)
+
+        finish_segement = origin_segment = GeneralEdgeSegment(self.to_group_middle_axis,
+                                            to_group.y + to_group.h - NODE_HEIGHT if to_group.y > 0 else to_group.y  + NODE_HEIGHT,
+                                            self.to_group_middle_axis,
+                                            0,
+                                            "jol",
+                                            scene, view)
+        origin_segment.tooltip.hide()
+
+
+node1 = BuildingNode(scene, view, 0, 0, NODE_WIDTH, NODE_HEIGHT, b1)
+power_group = BuildingGroup(0,100, GROUP_WIDTH, GROUP_HEIGHT, "pg", scene, 110, 255, 145, 20)
 power_group.add_node(node1, 0, 0)
-water_group = BuildingGroup(700, -300, 200, 300, "pg", scene, 110, 255, 245, 20)
+water_group = BuildingGroup(700, -400, GROUP_WIDTH, GROUP_HEIGHT, "pg", scene, 110, 255, 245, 20)
+ge1 = GeneralEdge(power_group, water_group, scene, view)
 tick_count = 0
 
 
 def tick():
     global tick_count
     tick_count += 1
-    if tick_count == 4:
+    if tick_count == 10:
         b1.status = "offline"
     node1.updateNode()
 
