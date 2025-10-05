@@ -18,15 +18,15 @@ def create_simple_world():
 
     power_plant = world.add_building(PowerPlant(
         id="POWER_001",
-        resources={"water": 100},
-        production={"electricity": 25}
+        resources={"water": 100, "electricity": 50},
+        production={"electricity": 30}
     ))
     
     water_plant = world.add_building(WaterPlant(
         id="WATER_001",
         resources={"electricity": 0},
         consumption={"electricity": 8},
-        production={"water": 20}
+        production={"water": 30}
     ))
     
     data_center = world.add_building(DataCenter(
@@ -129,7 +129,48 @@ def run_sim():
     for building_id, building in world.buildings.items():
         print(f"{building_id}: Status={building.status}, Resources={building.resources}")
 
-    save_simulation_to_csv(world, "final_nodes.csv", "final_edges.csv")        
+    save_simulation_to_csv(world, "final_nodes.csv", "final_edges.csv")      
+
+def run_attack_sim():
+    world = create_simple_world()
+
+    for _ in range(5):
+        world.tick()
+
+    world.execute_attack("POWER_001", severity=0.7)
+
+    for _ in range(15):
+        world.tick()
+
+    print("\n=== FINAL STATE ===")
+    for building_id, building in world.buildings.items():
+        print(f"{building_id}: Status={building.status}, Resources={building.resources}")
+
+def run_attack_simulation():
+    world = create_simple_world()
+   
+    
+    print("\n=== NORMAL OPERATION ===")
+    for _ in range(5):
+        world.tick()
+    
+    print("\n=== EXECUTING ATTACK ===")
+    world.execute_attack("POWER_001", severity=0.7)
+    
+    print("\n=== POST-ATTACK OPERATION ===")
+    for _ in range(5):
+        world.tick()
+    
+    print("\n=== RECOVERY EFFORTS ===")
+    world.execute_recovery("POWER_001", repair_level=0.9)
+    
+    print("\n=== POST-RECOVERY OPERATION ===")
+    for _ in range(5):
+        world.tick()
+    
+    print("\n=== FINAL STATE ===")
+    for building_id, building in world.buildings.items():
+        print(f"{building_id}: Status={building.status}, Resources={building.resources}")        
 
 if __name__ == "__main__":
-    run_sim()
+    run_attack_sim()
