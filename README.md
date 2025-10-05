@@ -13,7 +13,7 @@ This project simulates resource flows (electricity, water, supplies, personnel, 
 - `infrastructure.py` - Infrastructure network types with singleton pattern
 - `csv_world_import.py` - World management and CSV import/export utilities
 - `simulation.py` - Simulation scenarios and attack/recovery implementations
-- `testUI.py` - Visualization interface using NetworkX and Matplotlib
+- `testUI.py` - Visualization interface using NetworkX
 
 ## Features
 
