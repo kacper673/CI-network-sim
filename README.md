@@ -14,6 +14,7 @@ This project simulates resource flows (electricity, water, supplies, personnel, 
 - `csv_world_import.py` - World management and CSV import/export utilities
 - `simulation.py` - Simulation scenarios and attack/recovery implementations
 - `testUI.py` - Visualization interface using NetworkX
+- `graphsGUI.py` - More complex visualization interface using pyQT
 
 ## Features
 
@@ -33,6 +34,7 @@ This project simulates resource flows (electricity, water, supplies, personnel, 
 3. Run `python simulation.py` to execute a sample simulation
 4. Or run `python csv_world_import.py` to load from CSV files
 5. Or run `testUI.py` to run sample simulation with UI
+6. Or run `graphsGUI.py` to run a simulation with more advanced UI
 
 ## Extending the System
 
