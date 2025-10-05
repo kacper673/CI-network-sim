@@ -1,4 +1,4 @@
-from PyQt5.QtWidgets import QGraphicsLineItem, QApplication, QGraphicsScene, QGraphicsView, QGraphicsRectItem, QGraphicsTextItem, QLabel
+from PyQt5.QtWidgets import QAction, QToolBar, QMainWindow, QGraphicsLineItem, QApplication, QGraphicsScene, QGraphicsView, QGraphicsRectItem, QGraphicsTextItem, QLabel
 from PyQt5.QtGui import QBrush, QPen, QFont, QColor, QPainter
 from PyQt5.QtCore import Qt, QTimer
 import buildings
@@ -11,14 +11,6 @@ NODE_DISTANCE = 5
 GROUP_WIDTH = 400
 GROUP_HEIGHT = 600
 
-app = QApplication([])
-
-scene = QGraphicsScene()
-view = QGraphicsView(scene)
-view.setMouseTracking(True)
-view.viewport().setAttribute(Qt.WA_Hover, True)
-view.setDragMode(QGraphicsView.ScrollHandDrag)
-view.show()
 
 # Example building object (make sure produces and requires exist)
 b1 = buildings.PowerPlant("PP0001", resources={"water": 5})
@@ -164,45 +156,84 @@ class GeneralEdge:
         self.from_group_middle_axis = from_group.x + from_group.w / 2
         self.to_group_middle_axis = to_group.x + to_group.w / 2
 
-        origin_segment = GeneralEdgeSegment(self.from_group_middle_axis,
+        self.origin_segment = GeneralEdgeSegment(self.from_group_middle_axis,
                                             from_group.y + from_group.h - NODE_HEIGHT if from_group.y > 0 else from_group.y + NODE_HEIGHT,
                                             self.from_group_middle_axis,
                                             0,
                                             "jol",
                                             scene, view)
 
-        middle_segment = GeneralEdgeSegment(self.from_group_middle_axis, 0, self.to_group_middle_axis, 0, "jol", scene, view)
+        self.middle_segment = GeneralEdgeSegment(self.from_group_middle_axis, 0, self.to_group_middle_axis, 0, "jol", scene, view)
 
-        finish_segement = origin_segment = GeneralEdgeSegment(self.to_group_middle_axis,
+        self.finish_segment = GeneralEdgeSegment(self.to_group_middle_axis,
                                             to_group.y + to_group.h - NODE_HEIGHT if to_group.y > 0 else to_group.y  + NODE_HEIGHT,
                                             self.to_group_middle_axis,
                                             0,
                                             "jol",
                                             scene, view)
-        origin_segment.tooltip.hide()
 
 
-node1 = BuildingNode(scene, view, 0, 0, NODE_WIDTH, NODE_HEIGHT, b1)
-node2 = BuildingNode(scene, view, 0, 0, NODE_WIDTH, NODE_HEIGHT, b2)
-power_group = BuildingGroup(0,400, GROUP_WIDTH, GROUP_HEIGHT, "pg", scene, 110, 255, 145, 20)
-power_group.add_node(node1)
-water_group = BuildingGroup(700, -1000, GROUP_WIDTH, GROUP_HEIGHT, "pg", scene, 110, 255, 245, 20)
-water_group.add_node(node2)
-data_group = BuildingGroup(0, -1000, GROUP_WIDTH, GROUP_HEIGHT, "pg", scene, 110, 255, 245, 20)
-ge1 = GeneralEdge(power_group, water_group, scene, view)
-ge2 = GeneralEdge(power_group, data_group, scene, view)
-tick_count = 0
+    def toggle_visibility(self, visible):
+        self.origin_segment.setVisible(visible)
+        self.middle_segment.setVisible(visible)
+        self.finish_segment.setVisible(visible)
 
 
-def tick():
-    global tick_count
-    tick_count += 1
-    if tick_count == 10:
-        b1.status = "offline"
-    node1.updateNode()
+class MainWindow(QMainWindow):
+    def __init__(self):
+        super().__init__()
+
+        # Scene + View
+        self.scene = QGraphicsScene()
+        self.view = QGraphicsView(self.scene)
+        self.setCentralWidget(self.view)
+
+        self.node1 = BuildingNode(self.scene, self.view, 0, 0, NODE_WIDTH, NODE_HEIGHT, b1)
+        self.node2 = BuildingNode(self.scene, self.view, 0, 0, NODE_WIDTH, NODE_HEIGHT, b2)
+        self.power_group = BuildingGroup(0,400, GROUP_WIDTH, GROUP_HEIGHT, "pg", self.scene, 110, 255, 145, 20)
+        self.power_group.add_node(self.node1)
+        self.water_group = BuildingGroup(700, -1000, GROUP_WIDTH, GROUP_HEIGHT, "pg", self.scene, 110, 255, 245, 20)
+        self.water_group.add_node(self.node2)
+        self.data_group = BuildingGroup(0, -1000, GROUP_WIDTH, GROUP_HEIGHT, "pg", self.scene, 110, 255, 245, 20)
+        self.ge1 = GeneralEdge(self.power_group, self.water_group, self.scene, self.view)
+        self.ge2 = GeneralEdge(self.power_group, self.data_group, self.scene, self.view)
+        self.ge2.toggle_visibility(True)
+        self.ge1.toggle_visibility(True)
+        self.tick_count = 0
+        self.timer = QTimer()
+        self.timer.timeout.connect(self.tick)
+        self.timer.start(1000)
+        self.layers = {
+            "electricity": [self.ge1, self.ge2],
+            "water": [],
+            "roads": []
+        }
+
+        toolbar = QToolBar("Layers")
+        toolbar.setFloatable(True)
+        self.addToolBar(toolbar)
+        for layer in self.layers.keys():
+            action = QAction(layer.capitalize(), self)
+            action.setCheckable(True)
+            action.setChecked(True)
+            action.toggled.connect(lambda checked, l=layer: self.toggle_layer(l, checked))
+            toolbar.addAction(action)
+
+    def toggle_layer(self, layer, visible):
+        for edge in self.layers[layer]:
+            edge.toggle_visibility(visible)
 
 
-timer = QTimer()
-timer.timeout.connect(tick)
-timer.start(1000)
+    def tick(self):
+        self.tick_count += 1
+        if self.tick_count == 10:
+            b1.status = "offline"
+        self.node1.updateNode()
+
+
+
+
+app = QApplication(sys.argv)
+w1 = MainWindow()
+w1.show()
 sys.exit(app.exec_())
