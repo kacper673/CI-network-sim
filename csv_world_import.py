@@ -14,14 +14,13 @@ class World:
         self.energy_grid = infrastructure.EnergyGrid()
         self.water_network = infrastructure.WaterNetwork()
         self.railway_network = infrastructure.RailwayNetwork()
-        self.road_network = infrastructure.RoadNetwork()
+        self.telecom_network = infrastructure.TelecomNetwork()
         self.infrastructure_networks = {
             self.road_network.name: self.road_network,
             self.energy_grid.name: self.energy_grid,
             self.water_network.name: self.water_network,
             self.railway_network.name: self.railway_network,
-            self.telecom_network.name: self.telecom_network,
-            self.road_network.name: self.road_network,             
+            self.telecom_network.name: self.telecom_network,       
             }
         self.buildings = {}
         self.edges = []
@@ -151,31 +150,31 @@ class World:
             attacked_sth = True
             for edge in self.edges:
         # Match by layer name, or if edge connects to/from target
-            if (edge.attributes.get("layer") == target_id or 
-                edge.from_node.id == target_id or 
-                edge.to_node.id == target_id):
+                if (edge.attributes.get("layer") == target_id or 
+                    edge.from_node.id == target_id or 
+                    edge.to_node.id == target_id):
 
-                old_status = edge.attributes.get("status", "active")
+                    old_status = edge.attributes.get("status", "active")
 
-                if severity > 0.8:
-                    edge.attributes["status"] = "destroyed"
-                elif severity > 0.5:
-                    edge.attributes["status"] = "damaged"
-                    # Store original capacity if not already stored
-                    if "original_capacity" not in edge.attributes and "capacity" in edge.attributes:
-                        edge.attributes["original_capacity"] = edge.attributes["capacity"]
-                    # Reduce capacity
-                    if "capacity" in edge.attributes:
-                        edge.attributes["capacity"] = int(edge.attributes["capacity"] * (1 - severity))
-                else:
-                    # Just reduce capacity
-                    if "original_capacity" not in edge.attributes and "capacity" in edge.attributes:
-                        edge.attributes["original_capacity"] = edge.attributes["capacity"]
-                    if "capacity" in edge.attributes:
-                        edge.attributes["capacity"] = int(edge.attributes["capacity"] * (1 - severity))
+                    if severity > 0.8:
+                        edge.attributes["status"] = "destroyed"
+                    elif severity > 0.5:
+                        edge.attributes["status"] = "damaged"
+                        # Store original capacity if not already stored
+                        if "original_capacity" not in edge.attributes and "capacity" in edge.attributes:
+                            edge.attributes["original_capacity"] = edge.attributes["capacity"]
+                        # Reduce capacity
+                        if "capacity" in edge.attributes:
+                            edge.attributes["capacity"] = int(edge.attributes["capacity"] * (1 - severity))
+                    else:
+                        # Just reduce capacity
+                        if "original_capacity" not in edge.attributes and "capacity" in edge.attributes:
+                            edge.attributes["original_capacity"] = edge.attributes["capacity"]
+                        if "capacity" in edge.attributes:
+                            edge.attributes["capacity"] = int(edge.attributes["capacity"] * (1 - severity))
 
-                print(f"Attack on {edge.attributes.get('layer', 'unknown')} connection {edge.from_node.id}->{edge.to_node.id}: {old_status} -> {edge.attributes.get('status', 'active')}")
-                attacked_something = True
+                    print(f"Attack on {edge.attributes.get('layer', 'unknown')} connection {edge.from_node.id}->{edge.to_node.id}: {old_status} -> {edge.attributes.get('status', 'active')}")
+                    attacked_something = True
 
         if not attacked_something and "-" in target_id:
             parts = target_id.split("-")
@@ -696,6 +695,15 @@ def create_world_from_csv(csv_path_buildings, csv_path_edges):
             new_building.requires = json.loads(row["requires"])
             new_building.produces = json.loads(row["produces"])
             new_building.priority = int(row["priority"])
+
+            
+            for rt in infrastructure.RESOURCE_TYPES if hasattr(infrastructure, "RESOURCE_TYPES") else [
+            "electricity","water","basic_resources","critical_resources",
+            "heavy_resources","personnel","data"
+            ]:
+                new_building.resources.setdefault(rt, 0)
+
+
 
             world.add_building(new_building)
 
