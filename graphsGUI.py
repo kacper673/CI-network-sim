@@ -7,9 +7,9 @@ import sys
 
 NODE_WIDTH = 50
 NODE_HEIGHT = 30
-
-GROUP_WIDTH = 200
-GROUP_HEIGHT = 300
+NODE_DISTANCE = 5
+GROUP_WIDTH = 400
+GROUP_HEIGHT = 600
 
 app = QApplication([])
 
@@ -17,11 +17,12 @@ scene = QGraphicsScene()
 view = QGraphicsView(scene)
 view.setMouseTracking(True)
 view.viewport().setAttribute(Qt.WA_Hover, True)
+view.setDragMode(QGraphicsView.ScrollHandDrag)
 view.show()
 
 # Example building object (make sure produces and requires exist)
 b1 = buildings.PowerPlant("PP0001", resources={"water": 5})
-
+b2 = buildings.WaterPlant("WP0002", resources={"electricity": 5})
 
 class BuildingNode:
     def __init__(self, scene, view, x, y, w, h, building):
@@ -100,7 +101,15 @@ class BuildingGroup(QGraphicsRectItem):
         # Add to scene
         scene.addItem(self)
 
-    def add_node(self, node, rel_x, rel_y):
+    def add_node(self, node):
+        n = len(self.nodes)
+        if n % 2 == 0:
+            rel_x = 0
+        else:
+            rel_x = self.w - NODE_WIDTH
+
+        rel_y = self.h - (1+(n//2)) * (NODE_HEIGHT + NODE_DISTANCE) if self.y > 0 else (n//2) * (NODE_HEIGHT + NODE_DISTANCE)
+
         node.rect.setParentItem(self)
         node.label.setParentItem(self)
         node.rect.setPos(rel_x, rel_y)
@@ -156,7 +165,7 @@ class GeneralEdge:
         self.to_group_middle_axis = to_group.x + to_group.w / 2
 
         origin_segment = GeneralEdgeSegment(self.from_group_middle_axis,
-                                            from_group.y + from_group.h - NODE_HEIGHT if from_group.y > 0 else from_group.y - from_group.h + NODE_HEIGHT,
+                                            from_group.y + from_group.h - NODE_HEIGHT if from_group.y > 0 else from_group.y + NODE_HEIGHT,
                                             self.from_group_middle_axis,
                                             0,
                                             "jol",
@@ -174,10 +183,14 @@ class GeneralEdge:
 
 
 node1 = BuildingNode(scene, view, 0, 0, NODE_WIDTH, NODE_HEIGHT, b1)
-power_group = BuildingGroup(0,100, GROUP_WIDTH, GROUP_HEIGHT, "pg", scene, 110, 255, 145, 20)
-power_group.add_node(node1, 0, 0)
-water_group = BuildingGroup(700, -400, GROUP_WIDTH, GROUP_HEIGHT, "pg", scene, 110, 255, 245, 20)
+node2 = BuildingNode(scene, view, 0, 0, NODE_WIDTH, NODE_HEIGHT, b2)
+power_group = BuildingGroup(0,400, GROUP_WIDTH, GROUP_HEIGHT, "pg", scene, 110, 255, 145, 20)
+power_group.add_node(node1)
+water_group = BuildingGroup(700, -1000, GROUP_WIDTH, GROUP_HEIGHT, "pg", scene, 110, 255, 245, 20)
+water_group.add_node(node2)
+data_group = BuildingGroup(0, -1000, GROUP_WIDTH, GROUP_HEIGHT, "pg", scene, 110, 255, 245, 20)
 ge1 = GeneralEdge(power_group, water_group, scene, view)
+ge2 = GeneralEdge(power_group, data_group, scene, view)
 tick_count = 0
 
 
