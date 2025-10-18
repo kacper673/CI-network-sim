@@ -1,4 +1,5 @@
 # Critical Infrastructure Resilience Simulator
+# HackYeah 2025 Hackathon project 
 
 A comprehensive framework for modeling interdependencies, vulnerabilities, and attack scenarios in critical infrastructure systems.
 
